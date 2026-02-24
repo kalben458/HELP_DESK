@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard - Maintenance Tickets</title>
+  <link rel="stylesheet" href="admin.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <div class="dashboard-container">
+
+    <header class="dashboard-header">
+      <div class="logo-section">
+        <span class="logo-icon">🎓</span>
+        <h1>Admin Dashboard</h1>
+      </div>
+      <div class="user-section">
+        <span class="notification-bell">🔔 Admin</span>
+        <div class="avatar">👤</div>
+      </div>
+    </header>
+
+    <div class="filter-section">
+      <span>Filter:</span>
+      <div class="filter-buttons">
+        <button class="filter-btn active" data-status="open">Open</button>
+        <button class="filter-btn" data-status="in-progress">In Progress</button>
+        <button class="filter-btn" data-status="resolved">Resolved</button>
+        <button class="filter-btn" data-status="all">All</button>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table class="tickets-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Category</th>
+            <th>Location</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Assigned To</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tickets-body">
+          <!-- Filled by JS -->
+        </tbody>
+      </table>
+
+      <div id="loading" class="loading">Loading tickets...</div>
+      <div id="error" class="error hidden">Error loading tickets. Check console.</div>
+      <div id="empty" class="empty hidden">No tickets found in selected filter.</div>
+    </div>
+
+    <div class="pagination">
+      <button class="page-btn disabled">&lt;</button>
+      <button class="page-btn active">1</button>
+      <button class="page-btn disabled">&gt;</button>
+    </div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script type="module" src="../Help/firebase.js"></script>
+  <script type="module" src="admin.js"></script>
+</body>
+</html>

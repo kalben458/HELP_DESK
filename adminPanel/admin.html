@@ -6,10 +6,75 @@
   <title>Admin Dashboard - Maintenance Tickets</title>
   <link rel="stylesheet" href="admin.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Quick login styles - add to admin.css later if you want */
+    #login-container {
+      max-width: 400px;
+      margin: 100px auto;
+      padding: 40px 30px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    #login-container h2 {
+      margin-bottom: 24px;
+      color: #2563eb;
+    }
+    #login-container input {
+      width: 100%;
+      padding: 12px;
+      margin: 12px 0;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+    #login-btn {
+      width: 100%;
+      padding: 14px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      margin-top: 16px;
+    }
+    #login-btn:disabled {
+      background: #9ca3af;
+    }
+    #login-error {
+      color: #dc2626;
+      margin-top: 12px;
+      min-height: 20px;
+    }
+    #dashboard-content {
+      display: none; /* hidden until logged in */
+    }
+    #logout-btn {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+  </style>
 </head>
 <body>
 
-  <div class="dashboard-container">
+  <!-- Login screen -->
+  <div id="login-container">
+    <h2>Admin Login Required</h2>
+    <input type="email" id="email" placeholder="Email" required autocomplete="email">
+    <input type="password" id="password" placeholder="Password" required autocomplete="current-password">
+    <button id="login-btn">Login</button>
+    <div id="login-error"></div>
+  </div>
+
+  <!-- Dashboard - hidden until login -->
+  <div id="dashboard-content" class="dashboard-container">
 
     <header class="dashboard-header">
       <div class="logo-section">
@@ -17,11 +82,12 @@
         <h1>Admin Dashboard</h1>
       </div>
       <div class="user-section">
-        <span class="notification-bell">🔔 Admin</span>
+        <button id="logout-btn">Logout</button>
         <div class="avatar">👤</div>
       </div>
     </header>
 
+    <!-- Rest of your dashboard (filter, table, pagination) remains the same -->
     <div class="filter-section">
       <span>Filter:</span>
       <div class="filter-buttons">
@@ -45,14 +111,12 @@
             <th>Actions</th>
           </tr>
         </thead>
-        <tbody id="tickets-body">
-          <!-- Filled by JS -->
-        </tbody>
+        <tbody id="tickets-body"></tbody>
       </table>
 
       <div id="loading" class="loading">Loading tickets...</div>
       <div id="error" class="error hidden">Error loading tickets. Check console.</div>
-      <div id="empty" class="empty hidden">No tickets found in selected filter.</div>
+      <div id="empty" class="empty hidden">No tickets found.</div>
     </div>
 
     <div class="pagination">
@@ -64,8 +128,8 @@
   </div>
 
   <!-- Scripts -->
-  <!-- Inside admin.html, near the bottom -->
-<script type="module" src="firebase.js"></script>
-<script type="module" src="admin.js"></script>
+  <script type="module" src="firebase.js"></script>
+  <script type="module" src="admin.js"></script>
+
 </body>
 </html>

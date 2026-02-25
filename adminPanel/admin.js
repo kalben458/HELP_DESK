@@ -1,41 +1,95 @@
 // admin.js
-import { db } from './firebase.js';
-import {
-  collection,
-  onSnapshot,
-  query,
-  orderBy
-} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { db, auth } from './firebase.js';
+import { collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
-// DOM elements
-const tbody = document.getElementById("tickets-body");
+// DOM
+const loginContainer   = document.getElementById("login-container");
+const dashboardContent = document.getElementById("dashboard-content");
+const emailInput       = document.getElementById("email");
+const passwordInput    = document.getElementById("password");
+const loginBtn         = document.getElementById("login-btn");
+const loginError       = document.getElementById("login-error");
+const logoutBtn        = document.getElementById("logout-btn");
+
+const tbody         = document.getElementById("tickets-body");
 const filterButtons = document.querySelectorAll(".filter-btn");
-const loadingEl = document.getElementById("loading");
-const errorEl = document.getElementById("error");
-const emptyEl = document.getElementById("empty");
+const loadingEl     = document.getElementById("loading");
+const errorEl       = document.getElementById("error");
+const emptyEl       = document.getElementById("empty");
 
-// Priority & Status styling classes
+// Classes
 const priorityClasses = {
   "High":   "priority-high",
   "Medium": "priority-medium",
   "Low":    "priority-low",
-  "Urgent": "priority-urgent"   // if you use "Urgent"
+  "Urgent": "priority-urgent"
 };
 
 const statusClasses = {
-  "open":       "status-open",
+  "open":        "status-open",
   "in-progress": "status-progress",
-  "resolved":   "status-resolved"
+  "resolved":    "status-resolved"
 };
 
-// Current filter
+// State
+let allTickets = [];
+let unsubscribe = null;
 let currentFilter = "open";
 
-// Real-time listener
-let unsubscribe = null;
+// Auth state
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    loginContainer.style.display = "none";
+    dashboardContent.style.display = "block";
+    startListening();
+  } else {
+    loginContainer.style.display = "block";
+    dashboardContent.style.display = "none";
+    if (unsubscribe) unsubscribe();
+    tbody.innerHTML = "";
+  }
+});
 
-function startListening(filter = "open") {
-  // Clean up previous listener
+// Login
+loginBtn.addEventListener("click", async () => {
+  const email    = emailInput.value.trim();
+  const password = passwordInput.value.trim();
+
+  if (!email || !password) {
+    loginError.textContent = "Enter email and password";
+    return;
+  }
+
+  loginBtn.disabled = true;
+  loginError.textContent = "";
+
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+  } catch (err) {
+    let msg = "Login failed. ";
+    if (err.code === "auth/wrong-password")       msg += "Wrong password.";
+    else if (err.code === "auth/user-not-found")  msg += "No account found.";
+    else if (err.code === "auth/invalid-email")   msg += "Invalid email.";
+    else msg += err.message;
+    loginError.textContent = msg;
+  } finally {
+    loginBtn.disabled = false;
+  }
+});
+
+// Logout
+logoutBtn.addEventListener("click", async () => {
+  try {
+    await signOut(auth);
+  } catch (err) {
+    console.error("Logout failed:", err);
+    alert("Logout failed.");
+  }
+});
+
+// Tickets
+function startListening() {
   if (unsubscribe) unsubscribe();
 
   loadingEl.classList.remove("hidden");
@@ -43,48 +97,37 @@ function startListening(filter = "open") {
   emptyEl.classList.add("hidden");
   tbody.innerHTML = "";
 
-  const q = query(
-    collection(db, "maintenance-tickets"),
-    orderBy("createdAt", "desc")   // newest first
-  );
+  const q = query(collection(db, "maintenance-tickets"), orderBy("createdAt", "desc"));
 
   unsubscribe = onSnapshot(q, (snapshot) => {
     loadingEl.classList.add("hidden");
+    allTickets = [];
 
-    const tickets = [];
-    snapshot.forEach((doc) => {
+    snapshot.forEach(doc => {
       const data = doc.data();
-      tickets.push({
-        id: doc.id,                     // Firestore doc ID (you can use this instead of numeric ID)
+      allTickets.push({
+        id: doc.id,
         category: data.category || "—",
         location: data.location || "—",
         priority: data.priority || "Medium",
-        status: data.status?.toLowerCase() || "open",
-        assigned: data.assignedTo || "—"   // field name can be changed
+        status: (data.status || "open").toLowerCase(),
+        assigned: data.assignedTo || "—"
       });
     });
 
-    if (tickets.length === 0) {
-      emptyEl.classList.remove("hidden");
-      return;
-    }
-
-    renderTickets(tickets, filter);
-  }, (err) => {
-    console.error("Firestore listener error:", err);
+    renderTickets(currentFilter);
+  }, err => {
+    console.error("Firestore error:", err);
     loadingEl.classList.add("hidden");
-    errorEl.textContent = `Error: ${err.message || "Permission denied or network issue"}`;
+    errorEl.textContent = `Error: ${err.message}`;
     errorEl.classList.remove("hidden");
   });
 }
 
-function renderTickets(allTickets, filter) {
+function renderTickets(filter) {
   tbody.innerHTML = "";
 
-  const filtered = allTickets.filter(ticket => {
-    if (filter === "all") return true;
-    return ticket.status === filter;
-  });
+  const filtered = allTickets.filter(t => filter === "all" || t.status === filter);
 
   if (filtered.length === 0) {
     emptyEl.classList.remove("hidden");
@@ -95,21 +138,13 @@ function renderTickets(allTickets, filter) {
 
   filtered.forEach(ticket => {
     const row = document.createElement("tr");
-
+    
     row.innerHTML = `
-      <td>${ticket.id.substring(0,8)}...</td> <!-- shortened Firestore ID -->
+      <td>${ticket.id.substring(0,8)}...</td>
       <td>${ticket.category}</td>
       <td>${ticket.location}</td>
-      <td>
-        <span class="priority-badge ${priorityClasses[ticket.priority] || 'priority-medium'}">
-          ${ticket.priority}
-        </span>
-      </td>
-      <td>
-        <span class="status-badge ${statusClasses[ticket.status] || 'status-open'}">
-          ${ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
-        </span>
-      </td>
+      <td><span class="priority-badge ${priorityClasses[ticket.priority] || ''}">${ticket.priority}</span></td>
+      <td><span class="status-badge ${statusClasses[ticket.status] || ''}">${ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}</span></td>
       <td>${ticket.assigned}</td>
       <td><button class="action-btn">View</button></td>
     `;
@@ -118,23 +153,14 @@ function renderTickets(allTickets, filter) {
   });
 }
 
-// Filter button clicks
+// Filters
 filterButtons.forEach(btn => {
   btn.addEventListener("click", () => {
     filterButtons.forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
 
     currentFilter = btn.dataset.status;
-    renderTickets(/* we re-render from cached list or restart listener if needed */);
-    // For simplicity we can just call startListening again on filter change
-    startListening(currentFilter);
+    renderTickets(currentFilter);
   });
 });
-
-// Start with "Open" filter
-startListening("open");
-
-// Optional: cleanup on page leave (good practice)
-window.addEventListener("beforeunload", () => {
-  if (unsubscribe) unsubscribe();
-});
+//pang alis lang ng red lines

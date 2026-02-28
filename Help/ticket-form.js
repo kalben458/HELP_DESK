@@ -1,5 +1,5 @@
 // Change to:
-import { db } from '../adminPanel/firebase.js';
+import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const elements = {

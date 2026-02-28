@@ -1,5 +1,5 @@
 // admin.js
-import { db, auth } from './firebase.js';
+import { db, auth } from '../firebase.js';
 import { collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 

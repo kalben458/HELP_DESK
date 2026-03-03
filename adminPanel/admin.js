@@ -28,9 +28,7 @@ const emptyEl       = document.getElementById("empty");
 
 // Modal elements
 const modal             = document.getElementById("ticket-modal");
-const closeModal        = document.getElementById("close-modal");
-const closeModalBtn     = document.getElementById("close-modal-btn");
-const deleteTicketBtn   = document.getElementById("delete-ticket-btn");
+
 const modalId           = document.getElementById("modal-id");
 const modalCategory     = document.getElementById("modal-category");
 const modalLocation     = document.getElementById("modal-location");
@@ -40,8 +38,9 @@ const modalAssigned     = document.getElementById("modal-assigned");
 const modalDescription  = document.getElementById("modal-description");
 const modalPhoto        = document.getElementById("modal-photo");
 const modalNoPhoto      = document.getElementById("modal-no-photo");
+const deleteTicketBtn   = document.getElementById("delete-ticket-btn");
 
-// Styling classes
+// Priority & Status classes
 const priorityClasses = {
   "High":   "priority-high",
   "Medium": "priority-medium",
@@ -72,7 +71,7 @@ onAuthStateChanged(auth, (user) => {
     dashboardContent.style.display = "none";
     if (unsubscribe) unsubscribe();
     tbody.innerHTML = "";
-    modal.style.display = "none";
+    if (modal) modal.style.display = "none";
     emailInput.value = "";
     passwordInput.value = "";
     loginError.textContent = "";
@@ -116,7 +115,7 @@ logoutBtn.addEventListener("click", async () => {
   }
 });
 
-// ── Real-time Tickets ───────────────────────────────────────────
+// ── Load Tickets Real-Time ──────────────────────────────────────
 function startListening() {
   if (unsubscribe) unsubscribe();
 
@@ -149,12 +148,12 @@ function startListening() {
   }, err => {
     console.error("Firestore error:", err);
     loadingEl.classList.add("hidden");
-    errorEl.textContent = `Error: ${err.message}`;
+    errorEl.textContent = `Error: ${err.message || "Unknown error"}`;
     errorEl.classList.remove("hidden");
   });
 }
 
-// ── Render Tickets Table ────────────────────────────────────────
+// ── Render Table ────────────────────────────────────────────────
 function renderTickets(filter) {
   tbody.innerHTML = "";
 
@@ -183,7 +182,7 @@ function renderTickets(filter) {
     tbody.appendChild(row);
   });
 
-  // Add click listeners to View buttons
+  // Attach View button click listeners
   document.querySelectorAll(".view-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const ticketId = btn.dataset.id;
@@ -192,23 +191,28 @@ function renderTickets(filter) {
   });
 }
 
-// ── Show Modal ──────────────────────────────────────────────────
+// ── Open Modal with Ticket Details ──────────────────────────────
 function showTicketModal(ticketId) {
   const ticket = allTickets.find(t => t.id === ticketId);
-  if (!ticket) return;
+  if (!ticket) {
+    console.warn("Ticket not found:", ticketId);
+    return;
+  }
 
   currentTicketId = ticketId;
 
-  document.getElementById("modal-id").textContent          = ticket.id;
-  document.getElementById("modal-category").textContent    = ticket.category;
-  document.getElementById("modal-location").textContent    = ticket.location;
-  document.getElementById("modal-priority").textContent    = ticket.priority;
-  document.getElementById("modal-status").textContent      = ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1);
-  document.getElementById("modal-assigned").textContent    = ticket.assigned;
-  document.getElementById("modal-description").textContent = ticket.description;
+  // Fill modal fields
+  modalId.textContent          = ticket.id;
+  modalCategory.textContent    = ticket.category;
+  modalLocation.textContent    = ticket.location;
+  modalPriority.textContent    = ticket.priority;
+  modalStatus.textContent      = ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1);
+  modalAssigned.textContent    = ticket.assigned;
+  modalDescription.textContent = ticket.description;
 
-  const photoEl = document.getElementById("modal-photo");
-  const noPhotoEl = document.getElementById("modal-no-photo");
+  // Handle photo
+  const photoEl = modalPhoto;
+  const noPhotoEl = modalNoPhoto;
 
   if (ticket.photoBase64) {
     photoEl.src = ticket.photoBase64;
@@ -219,13 +223,13 @@ function showTicketModal(ticketId) {
     noPhotoEl.style.display = "block";
   }
 
-  // Only show Delete button if status is In Progress or Resolved
+  // Show Delete button ONLY if In Progress or Resolved
   if (ticket.status === "in-progress" || ticket.status === "resolved") {
     deleteTicketBtn.style.display = "inline-block";
     deleteTicketBtn.disabled = false;
   } else {
     deleteTicketBtn.style.display = "none";
-    // Or disable instead: deleteTicketBtn.disabled = true;
+
   }
 
   modal.style.display = "flex";
@@ -235,6 +239,7 @@ function showTicketModal(ticketId) {
 closeModal.addEventListener("click", () => modal.style.display = "none");
 closeModalBtn.addEventListener("click", () => modal.style.display = "none");
 
+// Click outside to close
 modal.addEventListener("click", (e) => {
   if (e.target === modal) modal.style.display = "none";
 });
@@ -243,18 +248,16 @@ modal.addEventListener("click", (e) => {
 deleteTicketBtn.addEventListener("click", async () => {
   if (!currentTicketId) return;
 
-  if (!confirm("Are you sure you want to delete this ticket? This action cannot be undone.")) {
-    return;
-  }
+  if (!confirm("Are you sure you want to delete this ticket? This cannot be undone.")) return;
 
   try {
     await deleteDoc(doc(db, "maintenance-tickets", currentTicketId));
     alert("Ticket deleted successfully.");
     modal.style.display = "none";
-    // onSnapshot will automatically refresh the table
+    // onSnapshot will auto-update the list
   } catch (err) {
     console.error("Delete failed:", err);
-    alert(`Failed to delete ticket.\n${err.message || "Check console for details."}`);
+    alert(`Failed to delete ticket.\n${err.message || "Check console."}`);
   }
 });
 

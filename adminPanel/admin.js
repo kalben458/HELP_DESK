@@ -11,7 +11,7 @@ import {
 import { signInWithEmailAndPassword, onAuthStateChanged, signOut } 
 from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
-// DOM elements
+//DOM Elements
 const loginContainer   = document.getElementById("login-container");
 const dashboardContent = document.getElementById("dashboard-content");
 const emailInput       = document.getElementById("email");
@@ -26,7 +26,7 @@ const loadingEl     = document.getElementById("loading");
 const errorEl       = document.getElementById("error");
 const emptyEl       = document.getElementById("empty");
 
-// Modal elements (make sure these IDs exist in your admin.html)
+//Modal elements
 const modal             = document.getElementById("ticket-modal");
 const closeModal        = document.getElementById("close-modal");
 const closeModalBtn     = document.getElementById("close-modal-btn");
@@ -41,7 +41,7 @@ const modalDescription  = document.getElementById("modal-description");
 const modalPhoto        = document.getElementById("modal-photo");
 const modalNoPhoto      = document.getElementById("modal-no-photo");
 
-// Priority & Status classes
+//Styling classes
 const priorityClasses = {
   "High":   "priority-high",
   "Medium": "priority-medium",
@@ -55,13 +55,13 @@ const statusClasses = {
   "resolved":    "status-resolved"
 };
 
-// State
+//State
 let allTickets = [];
 let unsubscribe = null;
 let currentFilter = "open";
-let currentTicketId = null;  // for delete
+let currentTicketId = null;  // to know which ticket to delete
 
-// Auth state listener
+//Auth State Listener
 onAuthStateChanged(auth, (user) => {
   if (user) {
     loginContainer.style.display = "none";
@@ -72,14 +72,14 @@ onAuthStateChanged(auth, (user) => {
     dashboardContent.style.display = "none";
     if (unsubscribe) unsubscribe();
     tbody.innerHTML = "";
-    if (modal) modal.style.display = "none";
+    modal.style.display = "none";
     emailInput.value = "";
     passwordInput.value = "";
     loginError.textContent = "";
   }
 });
 
-// Login handler
+//Login Handler
 loginBtn.addEventListener("click", async () => {
   const email    = emailInput.value.trim();
   const password = passwordInput.value.trim();
@@ -106,7 +106,7 @@ loginBtn.addEventListener("click", async () => {
   }
 });
 
-// Logout handler
+//Logout Handler
 logoutBtn.addEventListener("click", async () => {
   try {
     await signOut(auth);
@@ -116,7 +116,7 @@ logoutBtn.addEventListener("click", async () => {
   }
 });
 
-// ── Load tickets in real-time ───────────────────────────────────
+//Real time Tickets Listener
 function startListening() {
   if (unsubscribe) unsubscribe();
 
@@ -131,7 +131,7 @@ function startListening() {
     loadingEl.classList.add("hidden");
     allTickets = [];
 
-    snapshot.forEach((doc) => {
+    snapshot.forEach(doc => {
       const data = doc.data();
       allTickets.push({
         id: doc.id,
@@ -146,19 +146,19 @@ function startListening() {
     });
 
     renderTickets(currentFilter);
-  }, (err) => {
-    console.error("Firestore listener error:", err);
+  }, err => {
+    console.error("Firestore error:", err);
     loadingEl.classList.add("hidden");
-    errorEl.textContent = `Error loading tickets: ${err.message}`;
+    errorEl.textContent = `Error loading tickets: ${err.message || "Unknown error"}`;
     errorEl.classList.remove("hidden");
   });
 }
 
-// ── Render table rows ───────────────────────────────────────────
+//Render Table Rows
 function renderTickets(filter) {
   tbody.innerHTML = "";
 
-  const filtered = allTickets.filter((t) => filter === "all" || t.status === filter);
+  const filtered = allTickets.filter(t => filter === "all" || t.status === filter);
 
   if (filtered.length === 0) {
     emptyEl.classList.remove("hidden");
@@ -167,11 +167,11 @@ function renderTickets(filter) {
 
   emptyEl.classList.add("hidden");
 
-  filtered.forEach((ticket) => {
+  filtered.forEach(ticket => {
     const row = document.createElement("tr");
 
     row.innerHTML = `
-      <td>${ticket.id.substring(0, 8)}...</td>
+      <td>${ticket.id.substring(0,8)}...</td>
       <td>${ticket.category}</td>
       <td>${ticket.location}</td>
       <td><span class="priority-badge ${priorityClasses[ticket.priority] || ''}">${ticket.priority}</span></td>
@@ -183,8 +183,8 @@ function renderTickets(filter) {
     tbody.appendChild(row);
   });
 
-  // Attach View button listeners
-  document.querySelectorAll(".view-btn").forEach((btn) => {
+  //Attach View button listeners
+  document.querySelectorAll(".view-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const ticketId = btn.dataset.id;
       showTicketModal(ticketId);
@@ -192,23 +192,26 @@ function renderTickets(filter) {
   });
 }
 
-// ── Show ticket details in modal ────────────────────────────────
+//Show ticket information (para sa view button)
 function showTicketModal(ticketId) {
-  const ticket = allTickets.find((t) => t.id === ticketId);
-  if (!ticket) return;
+  const ticket = allTickets.find(t => t.id === ticketId);
+  if (!ticket) {
+    console.warn("Ticket not found:", ticketId);
+    return;
+  }
 
   currentTicketId = ticketId;
 
-  document.getElementById("modal-id").textContent          = ticket.id;
-  document.getElementById("modal-category").textContent    = ticket.category;
-  document.getElementById("modal-location").textContent    = ticket.location;
-  document.getElementById("modal-priority").textContent    = ticket.priority;
-  document.getElementById("modal-status").textContent      = ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1);
-  document.getElementById("modal-assigned").textContent    = ticket.assigned;
-  document.getElementById("modal-description").textContent = ticket.description;
+  modalId.textContent          = ticket.id;
+  modalCategory.textContent    = ticket.category;
+  modalLocation.textContent    = ticket.location;
+  modalPriority.textContent    = ticket.priority;
+  modalStatus.textContent      = ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1);
+  modalAssigned.textContent    = ticket.assigned;
+  modalDescription.textContent = ticket.description;
 
-  const photoEl = document.getElementById("modal-photo");
-  const noPhotoEl = document.getElementById("modal-no-photo");
+  const photoEl = modalPhoto;
+  const noPhotoEl = modalNoPhoto;
 
   if (ticket.photoBase64) {
     photoEl.src = ticket.photoBase64;
@@ -222,20 +225,16 @@ function showTicketModal(ticketId) {
   modal.style.display = "flex";
 }
 
-// ── Close modal handlers ────────────────────────────────────────
-closeModal.addEventListener("click", () => {
-  modal.style.display = "none";
-});
+//basta cloe lang yung popup model
+closeModal.addEventListener("click", () => modal.style.display = "none");
+closeModalBtn.addEventListener("click", () => modal.style.display = "none");
 
-closeModalBtn.addEventListener("click", () => {
-  modal.style.display = "none";
-});
-
+//Click outside to close
 modal.addEventListener("click", (e) => {
   if (e.target === modal) modal.style.display = "none";
 });
 
-// ── Delete ticket ───────────────────────────────────────────────
+//Delete ticket
 deleteTicketBtn.addEventListener("click", async () => {
   if (!currentTicketId) return;
 
@@ -247,17 +246,17 @@ deleteTicketBtn.addEventListener("click", async () => {
     await deleteDoc(doc(db, "maintenance-tickets", currentTicketId));
     alert("Ticket deleted successfully.");
     modal.style.display = "none";
-    // onSnapshot will auto-update the table
+    //automatically refresh the table
   } catch (err) {
     console.error("Delete failed:", err);
     alert(`Failed to delete ticket.\n${err.message || "Check console for details."}`);
   }
 });
 
-// ── Filter buttons ──────────────────────────────────────────────
-filterButtons.forEach((btn) => {
+//Filter Buttons
+filterButtons.forEach(btn => {
   btn.addEventListener("click", () => {
-    filterButtons.forEach((b) => b.classList.remove("active"));
+    filterButtons.forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
 
     currentFilter = btn.dataset.status;

@@ -61,7 +61,7 @@ let unsubscribe = null;
 let currentFilter = "open";
 let currentTicketId = null;
 
-// Auth state
+// Auth state listener
 onAuthStateChanged(auth, (user) => {
   if (user) {
     loginContainer.style.display = "none";
@@ -72,14 +72,14 @@ onAuthStateChanged(auth, (user) => {
     dashboardContent.style.display = "none";
     if (unsubscribe) unsubscribe();
     tbody.innerHTML = "";
-    modal.style.display = "none";
+    if (modal) modal.style.display = "none";
     emailInput.value = "";
     passwordInput.value = "";
     loginError.textContent = "";
   }
 });
 
-// Login
+// Login handler
 loginBtn.addEventListener("click", async () => {
   const email    = emailInput.value.trim();
   const password = passwordInput.value.trim();
@@ -106,7 +106,7 @@ loginBtn.addEventListener("click", async () => {
   }
 });
 
-// Logout
+// Logout handler
 logoutBtn.addEventListener("click", async () => {
   try {
     await signOut(auth);
@@ -116,7 +116,7 @@ logoutBtn.addEventListener("click", async () => {
   }
 });
 
-// Tickets
+// Real-time tickets
 function startListening() {
   if (unsubscribe) unsubscribe();
 
@@ -149,7 +149,7 @@ function startListening() {
   }, err => {
     console.error("Firestore error:", err);
     loadingEl.classList.add("hidden");
-    errorEl.textContent = `Error: ${err.message}`;
+    errorEl.textContent = `Error: ${err.message || "Unknown error"}`;
     errorEl.classList.remove("hidden");
   });
 }
@@ -183,7 +183,7 @@ function renderTickets(filter) {
     tbody.appendChild(row);
   });
 
-  // Attach View button listeners
+
   document.querySelectorAll(".view-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const ticketId = btn.dataset.id;
@@ -192,7 +192,7 @@ function renderTickets(filter) {
   });
 }
 
-// Show modal
+
 function showTicketModal(ticketId) {
   const ticket = allTickets.find(t => t.id === ticketId);
   if (!ticket) return;
@@ -233,9 +233,14 @@ modal.addEventListener("click", (e) => {
 
 // Delete ticket
 deleteTicketBtn.addEventListener("click", async () => {
-  if (!currentTicketId) return;
+  if (!currentTicketId) {
+    alert("No ticket selected.");
+    return;
+  }
 
-  if (!confirm("Are you sure you want to delete this ticket? This cannot be undone.")) return;
+  if (!confirm("Are you sure you want to delete this ticket? This cannot be undone.")) {
+    return;
+  }
 
   try {
     await deleteDoc(doc(db, "maintenance-tickets", currentTicketId));

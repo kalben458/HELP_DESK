@@ -224,6 +224,9 @@ function showTicketModal(ticketId) {
 
 // Close modal
 closeModal.addEventListener("click", () => modal.style.display = "none");
+
+
+
 closeModalBtn.addEventListener("click", () => modal.style.display = "none");
 
 
@@ -231,7 +234,7 @@ modal.addEventListener("click", (e) => {
   if (e.target === modal) modal.style.display = "none";
 });
 
-// Delete ticket
+// Delete ticket - listener attached once
 deleteTicketBtn.addEventListener("click", async () => {
   if (!currentTicketId) {
     alert("No ticket selected.");
@@ -248,6 +251,7 @@ deleteTicketBtn.addEventListener("click", async () => {
     modal.style.display = "none";
 
   } catch (err) {
+
     console.error("Delete failed:", err);
     alert(`Failed to delete ticket.\n${err.message || "Check console."}`);
   }
@@ -258,7 +262,7 @@ filterButtons.forEach(btn => {
   btn.addEventListener("click", () => {
     filterButtons.forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
-
+   
     currentFilter = btn.dataset.status;
     renderTickets(currentFilter);
   });

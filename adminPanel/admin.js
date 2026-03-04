@@ -1,4 +1,4 @@
-// admin.js
+//admin.js
 import { db, auth } from './firebase.js';
 import { 
   collection, 
@@ -26,7 +26,7 @@ const loadingEl     = document.getElementById("loading");
 const errorEl       = document.getElementById("error");
 const emptyEl       = document.getElementById("empty");
 
-//Modal elements
+// Modal elements
 const modal             = document.getElementById("ticket-modal");
 const closeModal        = document.getElementById("close-modal");
 const closeModalBtn     = document.getElementById("close-modal-btn");
@@ -41,7 +41,7 @@ const modalDescription  = document.getElementById("modal-description");
 const modalPhoto        = document.getElementById("modal-photo");
 const modalNoPhoto      = document.getElementById("modal-no-photo");
 
-//Styling classes
+//Priority & Status classes
 const priorityClasses = {
   "High":   "priority-high",
   "Medium": "priority-medium",
@@ -55,11 +55,11 @@ const statusClasses = {
   "resolved":    "status-resolved"
 };
 
-//State
+// State
 let allTickets = [];
 let unsubscribe = null;
 let currentFilter = "open";
-let currentTicketId = null;  // to know which ticket to delete
+let currentTicketId = null;
 
 //Auth State Listener
 onAuthStateChanged(auth, (user) => {
@@ -72,7 +72,7 @@ onAuthStateChanged(auth, (user) => {
     dashboardContent.style.display = "none";
     if (unsubscribe) unsubscribe();
     tbody.innerHTML = "";
-    modal.style.display = "none";
+    if (modal) modal.style.display = "none";
     emailInput.value = "";
     passwordInput.value = "";
     loginError.textContent = "";
@@ -192,7 +192,7 @@ function renderTickets(filter) {
   });
 }
 
-//Show ticket information (para sa view button)
+//Show Ticket Details
 function showTicketModal(ticketId) {
   const ticket = allTickets.find(t => t.id === ticketId);
   if (!ticket) {
@@ -225,16 +225,16 @@ function showTicketModal(ticketId) {
   modal.style.display = "flex";
 }
 
-//basta cloe lang yung popup model
+//Close Modal
 closeModal.addEventListener("click", () => modal.style.display = "none");
 closeModalBtn.addEventListener("click", () => modal.style.display = "none");
 
-//Click outside to close
+
 modal.addEventListener("click", (e) => {
   if (e.target === modal) modal.style.display = "none";
 });
 
-//Delete ticket
+//Delete Ticket
 deleteTicketBtn.addEventListener("click", async () => {
   if (!currentTicketId) return;
 
@@ -246,10 +246,10 @@ deleteTicketBtn.addEventListener("click", async () => {
     await deleteDoc(doc(db, "maintenance-tickets", currentTicketId));
     alert("Ticket deleted successfully.");
     modal.style.display = "none";
-    //automatically refresh the table
+    //auto updates table
   } catch (err) {
     console.error("Delete failed:", err);
-    alert(`Failed to delete ticket.\n${err.message || "Check console for details."}`);
+    alert(`Failed to delete ticket.\n${err.message || "Check console."}`);
   }
 });
 

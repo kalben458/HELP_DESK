@@ -1,4 +1,4 @@
-//admin.js
+// admin.js
 import { db, auth } from './firebase.js';
 import { 
   collection, 
@@ -11,7 +11,7 @@ import {
 import { signInWithEmailAndPassword, onAuthStateChanged, signOut } 
 from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
-//DOM Elements
+// DOM elements
 const loginContainer   = document.getElementById("login-container");
 const dashboardContent = document.getElementById("dashboard-content");
 const emailInput       = document.getElementById("email");
@@ -41,7 +41,7 @@ const modalDescription  = document.getElementById("modal-description");
 const modalPhoto        = document.getElementById("modal-photo");
 const modalNoPhoto      = document.getElementById("modal-no-photo");
 
-//Priority & Status classes
+// Priority & Status classes
 const priorityClasses = {
   "High":   "priority-high",
   "Medium": "priority-medium",
@@ -61,7 +61,7 @@ let unsubscribe = null;
 let currentFilter = "open";
 let currentTicketId = null;
 
-//Auth State Listener
+// Auth state
 onAuthStateChanged(auth, (user) => {
   if (user) {
     loginContainer.style.display = "none";
@@ -72,14 +72,14 @@ onAuthStateChanged(auth, (user) => {
     dashboardContent.style.display = "none";
     if (unsubscribe) unsubscribe();
     tbody.innerHTML = "";
-    if (modal) modal.style.display = "none";
+    modal.style.display = "none";
     emailInput.value = "";
     passwordInput.value = "";
     loginError.textContent = "";
   }
 });
 
-//Login Handler
+// Login
 loginBtn.addEventListener("click", async () => {
   const email    = emailInput.value.trim();
   const password = passwordInput.value.trim();
@@ -106,7 +106,7 @@ loginBtn.addEventListener("click", async () => {
   }
 });
 
-//Logout Handler
+// Logout
 logoutBtn.addEventListener("click", async () => {
   try {
     await signOut(auth);
@@ -116,7 +116,7 @@ logoutBtn.addEventListener("click", async () => {
   }
 });
 
-//Real time Tickets Listener
+// Tickets
 function startListening() {
   if (unsubscribe) unsubscribe();
 
@@ -149,12 +149,12 @@ function startListening() {
   }, err => {
     console.error("Firestore error:", err);
     loadingEl.classList.add("hidden");
-    errorEl.textContent = `Error loading tickets: ${err.message || "Unknown error"}`;
+    errorEl.textContent = `Error: ${err.message}`;
     errorEl.classList.remove("hidden");
   });
 }
 
-//Render Table Rows
+
 function renderTickets(filter) {
   tbody.innerHTML = "";
 
@@ -183,7 +183,7 @@ function renderTickets(filter) {
     tbody.appendChild(row);
   });
 
-  //Attach View button listeners
+  // Attach View button listeners
   document.querySelectorAll(".view-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const ticketId = btn.dataset.id;
@@ -192,13 +192,10 @@ function renderTickets(filter) {
   });
 }
 
-//Show Ticket Details
+// Show modal
 function showTicketModal(ticketId) {
   const ticket = allTickets.find(t => t.id === ticketId);
-  if (!ticket) {
-    console.warn("Ticket not found:", ticketId);
-    return;
-  }
+  if (!ticket) return;
 
   currentTicketId = ticketId;
 
@@ -225,7 +222,7 @@ function showTicketModal(ticketId) {
   modal.style.display = "flex";
 }
 
-//Close Modal
+// Close modal
 closeModal.addEventListener("click", () => modal.style.display = "none");
 closeModalBtn.addEventListener("click", () => modal.style.display = "none");
 
@@ -234,26 +231,24 @@ modal.addEventListener("click", (e) => {
   if (e.target === modal) modal.style.display = "none";
 });
 
-//Delete Ticket
+// Delete ticket
 deleteTicketBtn.addEventListener("click", async () => {
   if (!currentTicketId) return;
 
-  if (!confirm("Are you sure you want to delete this ticket? This cannot be undone.")) {
-    return;
-  }
+  if (!confirm("Are you sure you want to delete this ticket? This cannot be undone.")) return;
 
   try {
     await deleteDoc(doc(db, "maintenance-tickets", currentTicketId));
     alert("Ticket deleted successfully.");
     modal.style.display = "none";
-    //auto updates table
+
   } catch (err) {
     console.error("Delete failed:", err);
     alert(`Failed to delete ticket.\n${err.message || "Check console."}`);
   }
 });
 
-//Filter Buttons
+// Filters
 filterButtons.forEach(btn => {
   btn.addEventListener("click", () => {
     filterButtons.forEach(b => b.classList.remove("active"));

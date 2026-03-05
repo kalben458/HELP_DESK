@@ -249,43 +249,38 @@ modal.addEventListener("click", (e) => {
   if (e.target === modal) modal.style.display = "none";
 });
 
+
 // Mark as Resolved - show "Resolved ticket" message without alert
-// Mark ticket as resolved
+
 resolvedTicketBtn.addEventListener("click", async () => {
-    if (!currentTicketId) return;
+  if (!currentTicketId) return;
 
-      try {
-          // Update Firestore
-      await updateDoc(doc(db, "maintenance-tickets", currentTicketId), {
-         status: "resolved",
-        resolvedAt: serverTimestamp()     
-           });
+  try {
+    // Update Firestore
+    await updateDoc(doc(db, "maintenance-tickets", currentTicketId), {
+      status: "resolved",
+      resolvedAt: serverTimestamp()
+    });
 
-                   // Update local state
-                 const ticket = allTickets.find(t => t.id === currentTicketId);
-                          if (ticket) ticket.status = "resolved";
+    // Update local ticket status
+    const ticket = allTickets.find(t => t.id === currentTicketId);
+    if (ticket) ticket.status = "resolved";
 
-                        // Update the table row directly
-                            const row = [...tbody.querySelectorAll("tr")].find(r => {
-                                        return r.querySelector(".view-btn").dataset.id === currentTicketId                                    });
-                                                              if (row) {
-                                                                      const statusCell = row.querySelector(".status-badge");
-                                                        statusCell.textContent = "Resolved";
-                                                      statusCell.className = "status-badge status-resolved"; // update class for styling
-                                                                      }
+    // Re-render the table to update status
+    renderTickets(currentFilter);
 
-                                                              // Show temporary success message
-                                                                                              successMsg.style.opacity = "1";
-                                                                             setTimeout(() => {
-                                                                                                        successMsg.style.opacity = "0";
-                                                                                   }, 3000);
+    // Show temporary success message
+    successMsg.style.opacity = "1";
+    setTimeout(() => {
+      successMsg.style.opacity = "0";
+    }, 3000);
 
-                                                                                                                modal.style.display = "none";
+    modal.style.display = "none";
 
-                                                                                                                  } catch (err) {
-                                                                                                                      console.error("Failed to mark as resolved:", err);
-                                                                                                                        }
-                                                                                                                        });
+  } catch (err) {
+    console.error("Failed to mark as resolved:", err);
+  }
+});
 
 
 // Filters

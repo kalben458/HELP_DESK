@@ -250,6 +250,7 @@ modal.addEventListener("click", (e) => {
 });
 
 // Mark as Resolved - show "Resolved ticket" message without alert
+// Mark ticket as resolved
 resolvedTicketBtn.addEventListener("click", async () => {
   if (!currentTicketId) return;
 
@@ -259,16 +260,15 @@ resolvedTicketBtn.addEventListener("click", async () => {
       resolvedAt: serverTimestamp()
     });
 
-    // Show success message inside modal (no alert)
-    successMsg.style.opacity = "1";
+    successMsg.style.opacity = "1";  // show success message
     setTimeout(() => {
-      successMsg.style.opacity = "0";
-    }, 3000);  // fade out after 3 seconds
+      successMsg.style.opacity = "0"; // fade out after 3 seconds
+    }, 3000);
 
     modal.style.display = "none";
 
   } catch (err) {
-    console.error("Mark as resolved failed:", err);
+    console.error("Failed to mark as resolved:", err);
   }
 });
 

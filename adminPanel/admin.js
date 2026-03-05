@@ -252,25 +252,41 @@ modal.addEventListener("click", (e) => {
 // Mark as Resolved - show "Resolved ticket" message without alert
 // Mark ticket as resolved
 resolvedTicketBtn.addEventListener("click", async () => {
-  if (!currentTicketId) return;
+    if (!currentTicketId) return;
 
-  try {
-    await updateDoc(doc(db, "maintenance-tickets", currentTicketId), {
-      status: "resolved",
-      resolvedAt: serverTimestamp()
-    });
+      try {
+          // Update Firestore
+      await updateDoc(doc(db, "maintenance-tickets", currentTicketId), {
+         status: "resolved",
+        resolvedAt: serverTimestamp()     
+           });
 
-    successMsg.style.opacity = "1";  // show success message
-    setTimeout(() => {
-      successMsg.style.opacity = "0"; // fade out after 3 seconds
-    }, 3000);
+                   // Update local state
+                 const ticket = allTickets.find(t => t.id === currentTicketId);
+                          if (ticket) ticket.status = "resolved";
 
-    modal.style.display = "none";
+                        // Update the table row directly
+                            const row = [...tbody.querySelectorAll("tr")].find(r => {
+                                        return r.querySelector(".view-btn").dataset.id === currentTicketId                                    });
+                                                              if (row) {
+                                                                      const statusCell = row.querySelector(".status-badge");
+                                                        statusCell.textContent = "Resolved";
+                                                      statusCell.className = "status-badge status-resolved"; // update class for styling
+                                                                      }
 
-  } catch (err) {
-    console.error("Failed to mark as resolved:", err);
-  }
-});
+                                                              // Show temporary success message
+                                                                                              successMsg.style.opacity = "1";
+                                                                             setTimeout(() => {
+                                                                                                        successMsg.style.opacity = "0";
+                                                                                   }, 3000);
+
+                                                                                                                modal.style.display = "none";
+
+                                                                                                                  } catch (err) {
+                                                                                                                      console.error("Failed to mark as resolved:", err);
+                                                                                                                        }
+                                                                                                                        });
+
 
 // Filters
 filterButtons.forEach(btn => {

@@ -6,12 +6,13 @@ import {
   query, 
   orderBy,
   updateDoc,
-  doc 
+  doc,
+  serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { signInWithEmailAndPassword, onAuthStateChanged, signOut } 
 from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
-// ── DOM Elements ────────────────────────────────────────────────
+// DOM elements
 const loginContainer   = document.getElementById("login-container");
 const dashboardContent = document.getElementById("dashboard-content");
 const emailInput       = document.getElementById("email");
@@ -41,6 +42,12 @@ const modalDescription  = document.getElementById("modal-description");
 const modalPhoto        = document.getElementById("modal-photo");
 const modalNoPhoto      = document.getElementById("modal-no-photo");
 
+// Create a temporary success message element in modal (appears when resolved lang)
+const successMsg = document.createElement("p");
+successMsg.style.cssText = "color: #059669; font-weight: bold; text-align: center; margin-top: 15px; opacity: 0; transition: opacity 0.5s;";
+successMsg.textContent = "Resolved ticket";
+modal.appendChild(successMsg);  // add to modal
+
 // Priority & Status classes
 const priorityClasses = {
   "High":   "priority-high",
@@ -61,7 +68,7 @@ let unsubscribe = null;
 let currentFilter = "open";
 let currentTicketId = null;
 
-//Auth State Listener
+// Auth state listener
 onAuthStateChanged(auth, (user) => {
   if (user) {
     loginContainer.style.display = "none";
@@ -79,9 +86,7 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-
-
-//Login Handler
+// Login handler
 loginBtn.addEventListener("click", async () => {
   const email    = emailInput.value.trim();
   const password = passwordInput.value.trim();
@@ -108,17 +113,17 @@ loginBtn.addEventListener("click", async () => {
   }
 });
 
-//Logout Handler
+// Logout handler
 logoutBtn.addEventListener("click", async () => {
   try {
     await signOut(auth);
   } catch (err) {
     console.error("Logout failed:", err);
-    alert("Logout failed.");
+
   }
 });
 
-//Real-time Tickets
+// Real-time tickets
 function startListening() {
   if (unsubscribe) unsubscribe();
 
@@ -151,12 +156,12 @@ function startListening() {
   }, err => {
     console.error("Firestore error:", err);
     loadingEl.classList.add("hidden");
-    errorEl.textContent = `Error: ${err.message}`;
+    errorEl.textContent = `Error: ${err.message || "Unknown error"}`;
     errorEl.classList.remove("hidden");
   });
 }
 
-//Render Table
+
 function renderTickets(filter) {
   tbody.innerHTML = "";
 
@@ -194,7 +199,7 @@ function renderTickets(filter) {
   });
 }
 
-//Show Modal
+
 function showTicketModal(ticketId) {
   const ticket = allTickets.find(t => t.id === ticketId);
   if (!ticket) return;
@@ -221,7 +226,7 @@ function showTicketModal(ticketId) {
     noPhotoEl.style.display = "block";
   }
 
-  //Show "Resolved" button only if not yet resolved
+  // Show "Resolved" button only if not yet resolved
   if (ticket.status !== "resolved") {
     resolvedTicketBtn.style.display = "inline-block";
     resolvedTicketBtn.disabled = false;
@@ -232,39 +237,42 @@ function showTicketModal(ticketId) {
   modal.style.display = "flex";
 }
 
+// Close modal
 
-//Close Modal
-
+//
 closeModal.addEventListener("click", () => modal.style.display = "none");
 //
 
 closeModalBtn.addEventListener("click", () => modal.style.display = "none");
-
-
+//
 modal.addEventListener("click", (e) => {
   if (e.target === modal) modal.style.display = "none";
 });
 
-//Mark as Resolved
+// Mark as Resolved - show "Resolved ticket" message without alert
 resolvedTicketBtn.addEventListener("click", async () => {
   if (!currentTicketId) return;
 
   try {
     await updateDoc(doc(db, "maintenance-tickets", currentTicketId), {
       status: "resolved",
-      resolvedAt: serverTimestamp()  // optional: add timestamp
+      resolvedAt: serverTimestamp()
     });
 
-    alert("Ticket marked as Resolved!");
+    // Show success message inside modal (no alert)
+    successMsg.style.opacity = "1";
+    setTimeout(() => {
+      successMsg.style.opacity = "0";
+    }, 3000);  // fade out after 3 seconds
+
     modal.style.display = "none";
-    // onSnapshot auto-updates table
+
   } catch (err) {
-    console.error("Update failed:", err);
-    alert(`Failed to mark as resolved.\n${err.message || "Check console."}`);
+    console.error("Mark as resolved failed:", err);
   }
 });
 
-// ── Filter Buttons
+// Filters
 filterButtons.forEach(btn => {
   btn.addEventListener("click", () => {
     filterButtons.forEach(b => b.classList.remove("active"));

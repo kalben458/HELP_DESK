@@ -5,13 +5,13 @@ import {
   onSnapshot, 
   query, 
   orderBy,
-  deleteDoc,
+  updateDoc,
   doc 
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { signInWithEmailAndPassword, onAuthStateChanged, signOut } 
 from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
-// DOM elements
+// ── DOM Elements ────────────────────────────────────────────────
 const loginContainer   = document.getElementById("login-container");
 const dashboardContent = document.getElementById("dashboard-content");
 const emailInput       = document.getElementById("email");
@@ -30,7 +30,7 @@ const emptyEl       = document.getElementById("empty");
 const modal             = document.getElementById("ticket-modal");
 const closeModal        = document.getElementById("close-modal");
 const closeModalBtn     = document.getElementById("close-modal-btn");
-const deleteTicketBtn   = document.getElementById("delete-ticket-btn");
+const resolvedTicketBtn = document.getElementById("resolved-ticket-btn");
 const modalId           = document.getElementById("modal-id");
 const modalCategory     = document.getElementById("modal-category");
 const modalLocation     = document.getElementById("modal-location");
@@ -61,7 +61,7 @@ let unsubscribe = null;
 let currentFilter = "open";
 let currentTicketId = null;
 
-// Auth state listener
+//Auth State Listener
 onAuthStateChanged(auth, (user) => {
   if (user) {
     loginContainer.style.display = "none";
@@ -72,14 +72,16 @@ onAuthStateChanged(auth, (user) => {
     dashboardContent.style.display = "none";
     if (unsubscribe) unsubscribe();
     tbody.innerHTML = "";
-    if (modal) modal.style.display = "none";
+    modal.style.display = "none";
     emailInput.value = "";
     passwordInput.value = "";
     loginError.textContent = "";
   }
 });
 
-// Login handler
+
+
+//Login Handler
 loginBtn.addEventListener("click", async () => {
   const email    = emailInput.value.trim();
   const password = passwordInput.value.trim();
@@ -106,7 +108,7 @@ loginBtn.addEventListener("click", async () => {
   }
 });
 
-// Logout handler
+//Logout Handler
 logoutBtn.addEventListener("click", async () => {
   try {
     await signOut(auth);
@@ -116,7 +118,7 @@ logoutBtn.addEventListener("click", async () => {
   }
 });
 
-// Real-time tickets
+//Real-time Tickets
 function startListening() {
   if (unsubscribe) unsubscribe();
 
@@ -149,12 +151,12 @@ function startListening() {
   }, err => {
     console.error("Firestore error:", err);
     loadingEl.classList.add("hidden");
-    errorEl.textContent = `Error: ${err.message || "Unknown error"}`;
+    errorEl.textContent = `Error: ${err.message}`;
     errorEl.classList.remove("hidden");
   });
 }
 
-
+//Render Table
 function renderTickets(filter) {
   tbody.innerHTML = "";
 
@@ -192,7 +194,7 @@ function renderTickets(filter) {
   });
 }
 
-
+//Show Modal
 function showTicketModal(ticketId) {
   const ticket = allTickets.find(t => t.id === ticketId);
   if (!ticket) return;
@@ -219,13 +221,22 @@ function showTicketModal(ticketId) {
     noPhotoEl.style.display = "block";
   }
 
+  //Show "Resolved" button only if not yet resolved
+  if (ticket.status !== "resolved") {
+    resolvedTicketBtn.style.display = "inline-block";
+    resolvedTicketBtn.disabled = false;
+  } else {
+    resolvedTicketBtn.style.display = "none";
+  }
+
   modal.style.display = "flex";
 }
 
-// Close modal
+
+//Close Modal
+
 closeModal.addEventListener("click", () => modal.style.display = "none");
-
-
+//
 
 closeModalBtn.addEventListener("click", () => modal.style.display = "none");
 
@@ -234,35 +245,31 @@ modal.addEventListener("click", (e) => {
   if (e.target === modal) modal.style.display = "none";
 });
 
-// Delete ticket - listener attached once
-deleteTicketBtn.addEventListener("click", async () => {
-  if (!currentTicketId) {
-    alert("No ticket selected.");
-    return;
-  }
-
-  if (!confirm("Are you sure you want to delete this ticket? This cannot be undone.")) {
-    return;
-  }
+//Mark as Resolved
+resolvedTicketBtn.addEventListener("click", async () => {
+  if (!currentTicketId) return;
 
   try {
-    await deleteDoc(doc(db, "maintenance-tickets", currentTicketId));
-    alert("Ticket deleted successfully.");
+    await updateDoc(doc(db, "maintenance-tickets", currentTicketId), {
+      status: "resolved",
+      resolvedAt: serverTimestamp()  // optional: add timestamp
+    });
+
+    alert("Ticket marked as Resolved!");
     modal.style.display = "none";
-
+    // onSnapshot auto-updates table
   } catch (err) {
-
-    console.error("Delete failed:", err);
-    alert(`Failed to delete ticket.\n${err.message || "Check console."}`);
+    console.error("Update failed:", err);
+    alert(`Failed to mark as resolved.\n${err.message || "Check console."}`);
   }
 });
 
-// Filters
+// ── Filter Buttons
 filterButtons.forEach(btn => {
   btn.addEventListener("click", () => {
     filterButtons.forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
-   
+
     currentFilter = btn.dataset.status;
     renderTickets(currentFilter);
   });

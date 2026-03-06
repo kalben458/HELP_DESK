@@ -288,3 +288,8 @@ tr.resolved-row {
   background-color: #fefce8 !important;
   border-left: 4px solid #ca8a04;
 }
+
+/* Yellow indicator for resolved tickets */
+tr {
+  transition: background-color 0.4s, border-left 0.4s;
+}

@@ -141,8 +141,7 @@ function startListening() {
         status: (data.status || "open").toLowerCase(),
         assigned: data.assignedTo || "—",
         description: data.description || "No description",
-        photoBase64: data.photoBase64 || null,
-        rowElement: null  // we'll store row reference here later
+        photoBase64: data.photoBase64 || null
       });
     });
 
@@ -181,13 +180,10 @@ function renderTickets(filter) {
       <td><button class="action-btn view-btn" data-id="${ticket.id}">View</button></td>
     `;
 
-    // Store row reference for later color change
-    ticket.rowElement = row;
-
-    // Change row background to yellow if already resolved
+    // If already resolved, make row yellow
     if (ticket.status === "resolved") {
-      row.style.backgroundColor = "#fefce8"; // light yellow
-      row.style.borderLeft = "4px solid #ca8a04"; // yellow border indicator
+      row.style.backgroundColor = "#fefce8";
+      row.style.borderLeft = "4px solid #ca8a04";
     }
 
     tbody.appendChild(row);
@@ -228,17 +224,32 @@ function showTicketModal(ticketId) {
     noPhotoEl.style.display = "block";
   }
 
+  // Show "Resolved" button only if not yet resolved
+  if (ticket.status !== "resolved") {
+    resolvedTicketBtn.style.display = "inline-block";
+    resolvedTicketBtn.disabled = false;
+  } else {
+    resolvedTicketBtn.style.display = "none";
+  }
+
   modal.style.display = "flex";
 }
 
+
+
+
 // Close modal
+
+
 
 
 closeModal.addEventListener("click", () => modal.style.display = "none");
 
 //
+
 closeModalBtn.addEventListener("click", () => modal.style.display = "none");
-//
+
+
 modal.addEventListener("click", (e) => {
   if (e.target === modal) modal.style.display = "none";
 });
@@ -253,11 +264,11 @@ resolvedTicketBtn.addEventListener("click", async () => {
       resolvedAt: serverTimestamp()
     });
 
-    // Find the row in the table and make it yellow
-    const row = allTickets.find(t => t.id === currentTicketId)?.rowElement;
+    // Find and update the row visually
+    const row = tbody.querySelector(`button[data-id="${currentTicketId}"]`)?.closest("tr");
     if (row) {
       row.style.backgroundColor = "#fefce8"; // light yellow
-      row.style.borderLeft = "4px solid #ca8a04"; // yellow indicator
+      row.style.borderLeft = "4px solid #ca8a04"; // yellow border
       const statusCell = row.querySelector(".status-badge");
       if (statusCell) {
         statusCell.textContent = "Resolved";

@@ -283,13 +283,28 @@ h1 {
 
 
 
-/*Yellow indicator for resolved tickets*/
-tr.resolved-row {
-  background-color: #fefce8 !important;
-  border-left: 4px solid #ca8a04;
+/* Highlight resolved tickets when double-clicked */
+tr.resolved {
+  background-color: #f0fdf4 !important;        /* light green background */
+  border-left: 5px solid #059669 !important;   /* green left border */
+  transition: background-color 0.5s, border-left 0.5s;
 }
 
-/* Yellow indicator for resolved tickets */
-tr {
-  transition: background-color 0.4s, border-left 0.4s;
+/* Make status badge green when resolved */
+.status-resolved {
+  background-color: #059669 !important;
+  color: white !important;
+  font-weight: bold;
+}
+
+/* Hover effect for rows (optional - makes it clear they are clickable) */
+tr:hover {
+  background-color: #f3f4f6;
+  cursor: pointer;
+}
+
+/* Disable hover on resolved rows so they stay green */
+tr.resolved:hover {
+  background-color: #f0fdf4 !important;
+  cursor: default;
 }

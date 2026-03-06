@@ -30,8 +30,9 @@ const emptyEl       = document.getElementById("empty");
 // Modal elements
 const modal             = document.getElementById("ticket-modal");
 const closeModal        = document.getElementById("close-modal");
+
 const closeModalBtn     = document.getElementById("close-modal-btn");
-const resolvedTicketBtn = document.getElementById("resolved-ticket-btn");
+
 const modalId           = document.getElementById("modal-id");
 const modalCategory     = document.getElementById("modal-category");
 const modalLocation     = document.getElementById("modal-location");
@@ -62,7 +63,7 @@ let unsubscribe = null;
 let currentFilter = "open";
 let currentTicketId = null;
 
-// Auth state listener
+// Auth state
 onAuthStateChanged(auth, (user) => {
   if (user) {
     loginContainer.style.display = "none";
@@ -80,7 +81,7 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-// Login handler
+// Login
 loginBtn.addEventListener("click", async () => {
   const email    = emailInput.value.trim();
   const password = passwordInput.value.trim();
@@ -107,7 +108,7 @@ loginBtn.addEventListener("click", async () => {
   }
 });
 
-// Logout handler
+// Logout
 logoutBtn.addEventListener("click", async () => {
   try {
     await signOut(auth);
@@ -180,23 +181,43 @@ function renderTickets(filter) {
       <td><button class="action-btn view-btn" data-id="${ticket.id}">View</button></td>
     `;
 
-    // If already resolved, make row yellow
+    // Visual: green row for resolved tickets
     if (ticket.status === "resolved") {
-      row.style.backgroundColor = "#fefce8";
-      row.style.borderLeft = "4px solid #ca8a04";
+      row.classList.add("resolved");
     }
 
     tbody.appendChild(row);
   });
 
+  // View button
   document.querySelectorAll(".view-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const ticketId = btn.dataset.id;
       showTicketModal(ticketId);
     });
   });
-}
 
+  // Double-click row to mark as resolved
+  document.querySelectorAll("tr").forEach(row => {
+    row.addEventListener("dblclick", async () => {
+      const viewBtn = row.querySelector(".view-btn");
+      if (!viewBtn) return;
+      const ticketId = viewBtn.dataset.id;
+
+      if (confirm("Mark this ticket as resolved?")) {
+        try {
+          await updateDoc(doc(db, "maintenance-tickets", ticketId), {
+            status: "resolved",
+            resolvedAt: serverTimestamp()
+          });
+          row.classList.add("resolved"); // instant visual feedback
+        } catch (err) {
+          console.error("Failed to resolve ticket:", err);
+        }
+      }
+    });
+  });
+}
 
 function showTicketModal(ticketId) {
   const ticket = allTickets.find(t => t.id === ticketId);
@@ -224,16 +245,15 @@ function showTicketModal(ticketId) {
     noPhotoEl.style.display = "block";
   }
 
-  // Show "Resolved" button only if not yet resolved
-  if (ticket.status !== "resolved") {
-    resolvedTicketBtn.style.display = "inline-block";
-    resolvedTicketBtn.disabled = false;
-  } else {
-    resolvedTicketBtn.style.display = "none";
-  }
+  
 
   modal.style.display = "flex";
 }
+
+
+
+
+
 
 
 
@@ -245,7 +265,7 @@ function showTicketModal(ticketId) {
 
 closeModal.addEventListener("click", () => modal.style.display = "none");
 
-//
+
 
 closeModalBtn.addEventListener("click", () => modal.style.display = "none");
 
@@ -254,33 +274,7 @@ modal.addEventListener("click", (e) => {
   if (e.target === modal) modal.style.display = "none";
 });
 
-// Mark as Resolved - change row to yellow
-resolvedTicketBtn.addEventListener("click", async () => {
-  if (!currentTicketId) return;
 
-  try {
-    await updateDoc(doc(db, "maintenance-tickets", currentTicketId), {
-      status: "resolved",
-      resolvedAt: serverTimestamp()
-    });
-
-    // Find and update the row visually
-    const row = tbody.querySelector(`button[data-id="${currentTicketId}"]`)?.closest("tr");
-    if (row) {
-      row.style.backgroundColor = "#fefce8"; // light yellow
-      row.style.borderLeft = "4px solid #ca8a04"; // yellow border
-      const statusCell = row.querySelector(".status-badge");
-      if (statusCell) {
-        statusCell.textContent = "Resolved";
-        statusCell.className = "status-badge status-resolved";
-      }
-    }
-
-    modal.style.display = "none";
-  } catch (err) {
-    console.error("Mark as resolved failed:", err);
-  }
-});
 
 // Filters
 filterButtons.forEach(btn => {

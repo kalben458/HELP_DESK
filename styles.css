@@ -162,12 +162,18 @@ body::before {
     z-index: 10;
 }
 
+
 .footer-logos {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
+    align-items: center;
+    gap: 80px;
     width: 100%;
     max-width: 1100px;
+    margin: 0 auto; /*centers*/
 }
+
+
 
 .footer-logo-item {
     display: flex;
